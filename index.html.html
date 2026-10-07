@@ -1,0 +1,1827 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Gerenciador de Pedidos — Final (Unificado)</title>
+
+  <style>
+/* ======== ESTILO MELHORADO DO CARD DE AÇÕES ======== */
+.col {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+#botoes-taxa {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.btn-taxa {
+  background: #f1f5f9;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.btn-taxa:hover {
+  background: #e2e8f0;
+}
+.btn-taxa.ativo {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+#taxa-personalizada {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px;
+  font-size: 14px;
+  width: 100%;
+}
+
+#endereco-cliente {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px;
+  resize: vertical;
+  font-size: 14px;
+  min-height: 50px;
+}
+
+#forma-pagamento,
+#valor-pago,
+#upload-logo {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px;
+  font-size: 14px;
+}
+
+#preview-logo {
+  display: block !important;
+  margin-top: 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  padding: 6px;
+  background: #fff;
+  width: 120px;
+  height: auto;
+  object-fit: contain;
+  align-self: center; /* centraliza dentro da coluna */
+}
+
+    :root{
+      --bg:#f8f9fa;
+      --card:#ffffff;
+      --muted:#6b7280;
+      --text:#111827;
+      --accent:#0b5ed7;
+      --danger:#d9534f;
+      --border:#e6e6e6;
+      --shadow: rgba(2,6,23,0.06);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
+      background:var(--bg);
+      color:var(--text);
+      -webkit-font-smoothing:antialiased;
+    }
+
+    .app{max-width:1400px;margin:18px auto;padding:12px}
+    header.topbar{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+    .brand{display:flex;align-items:center;gap:12px;padding:8px 12px;border-radius:8px;background:var(--card);border:1px solid var(--border);box-shadow:0 6px 18px var(--shadow)}
+    .brand img{height:40px;width:auto;border-radius:6px}
+    .brand-title{font-size:18px;color:var(--text);font-weight:700}
+
+    /* Abas estilo Chrome */
+    .abas-navegacao{display:flex;align-items:center;gap:6px;padding:6px;margin-left:12px;overflow-x:auto}
+    .abas-navegacao .aba{display:flex;gap:8px;align-items:center;padding:10px 14px;border-radius:8px 8px 0 0;background:transparent;border:1px solid transparent;color:var(--muted);font-weight:600;cursor:pointer;transition:all .14s ease;white-space:nowrap}
+    .abas-navegacao .aba:hover{background:#f1f5f9;color:var(--text)}
+    .abas-navegacao .aba.ativa{background:var(--card);color:var(--text);border:1px solid var(--border);box-shadow:0 6px 14px rgba(0,0,0,0.04)}
+
+    /* Tela inicial */
+    #tela-inicial{display:flex;gap:18px;align-items:center;justify-content:center;padding:28px}
+    .card-inicial{background:var(--card);border-radius:12px;padding:18px;width:100%;max-width:880px;border:1px solid var(--border);box-shadow:0 8px 20px rgba(8,10,12,0.04);text-align:center}
+    .controle-buttons{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+    .btn{cursor:pointer;border:0;border-radius:8px;padding:10px 14px;font-weight:700;display:inline-flex;align-items:center;gap:8px}
+    .abrir{background:var(--accent);color:#fff}
+    .retomar{background:#10b981;color:#fff}
+    .pausar{background:#f59e0b;color:#fff}
+    .encerrar{background:var(--danger);color:#fff}
+
+    /* Layout principal */
+    .container{display:grid;grid-template-columns:1fr 1.6fr 1fr;gap:16px;margin-top:12px}
+    @media(max-width:1100px){.container{grid-template-columns:1fr 1fr}}
+    @media(max-width:720px){.container{grid-template-columns:1fr}}
+
+    .cartao{background:var(--card);border-radius:10px;padding:14px;border:1px solid var(--border);box-shadow:0 6px 18px var(--shadow)}
+
+    /* Menu / lista de produtos */
+    #lista-menu{display:flex;flex-direction:column;gap:10px;max-height:560px;overflow:auto;padding-right:6px}
+    .produto-card{display:flex;justify-content:space-between;align-items:center;padding:12px;border-radius:8px;border:1px solid var(--border);background:linear-gradient(180deg,#fff,#fbfdff);transition:transform .12s ease,box-shadow .12s ease;cursor:pointer}
+    .produto-card:hover{transform:translateY(-4px);box-shadow:0 10px 30px rgba(2,6,23,0.06)}
+    .produto-left{display:flex;gap:12px;align-items:center}
+    .produto-emoji{font-size:28px}
+    .produto-info{display:flex;flex-direction:column}
+    .produto-nome{font-weight:700}
+    .produto-cat{font-size:12px;color:var(--muted);margin-top:2px}
+    .produto-preco{font-weight:700;color:var(--accent)}
+
+    /* preview pedido */
+    #preview-pedido-itens{display:flex;flex-direction:column;gap:8px;min-height:120px}
+    .item-preview{display:flex;justify-content:space-between;align-items:flex-start;padding:10px;border-radius:8px;border:1px dashed var(--border);background:linear-gradient(0deg,#ffffff,#fcfdff)}
+    .item-preview .left{max-width:70%}
+    .item-qtd{font-weight:700;margin-right:8px}
+    .item-adicionais{font-size:13px;color:var(--muted);margin-top:6px}
+    .item-observacao{font-style:italic;color:var(--muted);font-size:13px;margin-top:6px}
+
+    /* modal adicionais */
+    /* ==========================
+   MODAL MODERNO
+   ========================== */
+
+.modal{
+    display:none;
+    position:fixed;
+    inset:0;
+
+    background:rgba(15,23,42,.55);
+
+    backdrop-filter:blur(4px);
+
+    z-index:9999;
+
+    padding:30px;
+}
+
+.modal-content{
+
+    max-width:950px;
+    width:100%;
+
+    max-height:90vh;
+
+    overflow:auto;
+
+    margin:auto;
+
+    background:#fff;
+
+    border-radius:22px;
+
+    padding:28px;
+
+    border:1px solid #e2e8f0;
+
+    box-shadow:
+      0 25px 50px rgba(0,0,0,.20);
+}
+
+.modal-content h3{
+
+    margin:0 0 22px;
+
+    font-size:32px;
+
+    font-weight:800;
+
+    color:#0f172a;
+
+    padding-bottom:14px;
+
+    border-bottom:1px solid #e2e8f0;
+}
+.modal-topo{
+
+    display:grid;
+
+    grid-template-columns:1fr 220px;
+
+    gap:20px;
+
+    margin-bottom:22px;
+}
+
+.modal-topo label{
+
+    display:block;
+
+    margin-bottom:6px;
+
+    font-size:13px;
+
+    font-weight:600;
+
+    color:#475569;
+}
+
+#modal-item-qtd{
+
+    width:100%;
+
+    height:48px;
+
+    border:1px solid #dbe3ec;
+
+    border-radius:12px;
+
+    padding:0 14px;
+
+    font-size:16px;
+}
+
+#modal-preco-unit{
+
+    height:48px;
+
+    display:flex;
+
+    align-items:center;
+
+    padding:0 14px;
+
+    border:1px solid #dbe3ec;
+
+    border-radius:12px;
+
+    background:#f8fafc;
+
+    font-size:16px;
+
+    font-weight:700;
+
+    color:#0b5ed7;
+}
+
+    /* rodapé admin (botões alinhados) */
+    .rodape-admin{display:flex;gap:10px;justify-content:center;align-items:center;padding:10px;margin-top:10px}
+    .rodape-admin .btn{display:inline-flex;gap:8px;align-items:center;padding:10px 14px;border-radius:8px}
+
+    /* impressão */
+    #print-area{display:none}
+    @media print{
+      body *{visibility:hidden}
+      #print-area, #print-area *{visibility:visible}
+      #print-area{position:absolute;left:0;top:0;width:320px;padding:8px;color:#000;background:#fff}
+    }
+
+    /* utilitários */
+    .flex{display:flex;gap:8px;align-items:center}
+    .right{margin-left:auto}
+    .small-muted{font-size:13px;color:var(--muted)}
+.grid-3 {
+  display: grid;
+  grid-template-columns: 1.2fr 0.6fr 0.8fr; /* controla a largura relativa */
+  gap: 10px;
+  align-items: end; /* alinha todos os inputs na mesma linha */
+}
+
+  
+/* ===== STATUS DOS ADICIONAIS ===== */
+.status-adicional {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 5px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.status-adicional.ativo {
+  background: #dcfce7;
+  color: #166534;
+}
+.status-adicional.inativo {
+  background: #fee2e2;
+  color: #991b1b;
+}
+.adicional-inativo {
+  opacity: .65;
+  background: #f8fafc !important;
+}
+.btn-status-adicional {
+  min-width: 70px;
+  height: 28px;
+
+  padding: 4px 8px;
+
+  font-size: 12px;
+  font-weight: 600;
+}
+.btn-status-adicional.desativar {
+  background: #f59e0b;
+  color: #fff;
+}
+.btn-status-adicional.ativar {
+  background: #10b981;
+  color: #fff;
+}
+/* ===== ADICIONAIS MODERNO ===== */
+
+.grid-3{
+    display:grid;
+    grid-template-columns:2fr 1fr 1fr;
+    gap:18px;
+    align-items:end;
+
+    background:#f8fafc;
+    border:1px solid #e2e8f0;
+    border-radius:16px;
+
+    padding
+}
+.grid-3 > div{
+    display:flex;
+    flex-direction:column;
+}
+
+.grid-3 label{
+    margin-bottom:6px;
+    font-size:13px;
+    font-weight:600;
+    color:#475569;
+}
+
+.grid-3 input,
+.grid-3 select{
+
+    height:44px;
+
+    border:1px solid #dbe3ec;
+    border-radius:12px;
+
+    padding:0 14px;
+
+    font-size:14px;
+
+    background:#fff;
+}
+
+.grid-3 input:focus,
+.grid-3 select:focus{
+
+    outline:none;
+
+    border-color:#0b5ed7;
+
+    box-shadow:
+      0 0 0 4px rgba(11,94,215,.12);
+}
+`
+.grid-3-adicional > div{
+    display:flex;
+    flex-direction:column;
+}
+#lista-adicionais-para-produto{
+
+    display:grid !important;
+
+    grid-template-columns:
+        repeat(auto-fill,minmax(220px,1fr));
+
+    gap:12px;
+
+    padding:12px !important;
+
+    background:#f8fafc;
+
+    border-radius:16px !important;
+}
+
+.grid-3-adicional label{
+    margin-bottom:6px;
+    font-size:13px;
+    font-weight:600;
+    color:#475569;
+}
+
+.grid-3-adicional input,
+.grid-3-adicional select{
+    width:100%;
+    height:44px;
+
+    padding:0 14px;
+
+    border:1px solid #dbe3ec;
+    border-radius:12px;
+
+    background:#fff;
+
+    font-size:14px;
+
+    transition:.2s;
+}
+
+.grid-3-adicional input:hover,
+.grid-3-adicional select:hover{
+    border-color:#93c5fd;
+}
+
+.grid-3-adicional input:focus,
+.grid-3-adicional select:focus{
+    outline:none;
+    border-color:#0b5ed7;
+
+    box-shadow:
+      0 0 0 4px rgba(11,94,215,.12);
+}
+
+#form-novo-adicional{
+    background:#f8fafc;
+
+    border:1px solid #e2e8f0;
+    border-radius:16px;
+
+    padding:20px;
+
+    margin-bottom:20px;
+}
+
+@media(max-width:900px){
+    .grid-3-adicional{
+        grid-template-columns:1fr;
+    }
+}
+``/* ==============================
+   FORMULÁRIO DE CATEGORIAS
+   ============================== */
+
+#form-nova-categoria{
+    background:#f8fafc;
+    border:1px solid #e2e8f0;
+    border-radius:16px;
+    padding:20px;
+    margin-bottom:20px;
+}
+
+.grid-2{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:20px;
+}
+
+.grid-2 > div{
+    display:flex;
+    flex-direction:column;
+}
+
+.grid-2 label{
+    font-size:13px;
+    font-weight:600;
+    color:#475569;
+    margin-bottom:8px;
+}
+
+.grid-2 input{
+    width:100%;
+    height:48px;
+
+    padding:0 14px;
+
+    border:1px solid #cbd5e1;
+    border-radius:12px;
+
+    background:#fff;
+
+    font-size:14px;
+
+    transition:.2s;
+}
+
+.grid-2 input:hover{
+    border-color:#60a5fa;
+}
+
+.grid-2 input:focus{
+    outline:none;
+    border-color:#0b5ed7;
+    box-shadow:0 0 0 4px rgba(11,94,215,.15);
+}
+
+@media(max-width:900px){
+    .grid-2{
+        grid-template-columns:1fr;
+    }
+}
+
+.grid-2 > div{
+    display:flex;
+    flex-direction:column;
+}
+
+.grid-2 label{
+    font-size:13px;
+    font-weight:600;
+    color:#475569;
+    margin-bottom:6px;
+}
+
+.grid-2 input{
+    width:100%;
+    height:46px;
+
+    border:1px solid #dbe3ec;
+    border-radius:12px;
+
+    padding:0 14px;
+
+    background:#fff;
+
+    font-size:14px;
+
+    transition:.2s;
+}
+
+.grid-2 input:hover{
+    border-color:#93c5fd;
+}
+
+.grid-2 input:focus{
+    outline:none;
+    border-color:#0b5ed7;
+
+    box-shadow:
+      0 0 0 4px rgba(11,94,215,.15);
+}
+
+#categorias h2{
+    font-size:32px;
+    margin-bottom:20px;
+}
+
+#categorias h3{
+    font-size:24px;
+    color:#334155;
+}
+
+@media(max-width:900px){
+    .grid-2{
+        grid-template-columns:1fr;
+    }
+}
+.card-formulario{
+    background:#f8fafc;
+    border:1px solid #e2e8f0;
+    border-radius:16px;
+
+    padding:20px;
+
+    margin-bottom:20px;
+}
+</style>
+</head>
+
+<body>
+  <div class="app">
+
+    <!-- TOPBAR -->
+    <header class="topbar">
+      <div class="brand">
+        <img id="logo-preview" src="" alt="Logo do Cliente" style="display:none" />
+        <span class="brand-title">Gerenciador de Pedidos 🍔</span>
+      </div>
+
+      <!-- ABAS -->
+      <nav class="abas-navegacao">
+        <button class="aba ativa" onclick="mostrarSecao('pedido')">🛒 <span>Novo Pedido</span></button>
+        <button class="aba" onclick="mostrarSecao('historico')">📜 <span>Histórico</span></button>
+        <button class="aba" onclick="mostrarSecao('menu')">🍔 <span>Menu</span></button>
+        <button class="aba" onclick="mostrarSecao('categorias')">🗂️ <span>Categorias</span></button>
+        <button class="aba" onclick="mostrarSecao('adicionais')">🧩 <span>Adicionais</span></button>
+      </nav>
+
+      <!-- CONTROLES DE LOJA (visíveis quando loja aberta) -->
+      <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+        <button id="btn-pausar-loja" class="btn pausar" style="display:none" onclick="pausarLoja()">⏸️ Pausar</button>
+        <button id="btn-retomar-loja-top" class="btn retomar" style="display:none" onclick="retomarLoja()">▶️ Retomar</button>
+        <button id="btn-encerrar-loja" class="btn encerrar" style="display:none" onclick="encerrarDia()">🧾 Encerrar</button>
+      </div>
+    </header>
+
+    <!-- TELA INICIAL (abre automaticamente se loja fechada) -->
+    <section id="tela-inicial">
+      <div class="card-inicial">
+        <h2>Controle da Loja</h2>
+        <p id="status-loja">🔒 Loja fechada</p>
+        <div class="controle-buttons">
+          <button id="btn-abrir-loja" class="btn abrir" onclick="abrirLoja()">🟢 Abrir Loja (novo turno)</button>
+          <button id="btn-retomar-loja" class="btn retomar" style="display:none" onclick="retomarLoja()">▶️ Retomar Loja (continuar)</button>
+        </div>
+        <p class="small-muted" style="margin-top:10px">Ao encerrar o turno você poderá salvar/imprimir o resumo com o logo.</p>
+      </div>
+    </section>
+
+    <!-- SEÇÃO NOVO PEDIDO -->
+    <section id="pedido" style="display:none">
+      <div class="container">
+        <!-- MENU -->
+        <aside class="cartao">
+          <h2>🍔 Cardápio</h2>
+          <div class="admin-row">
+            <select id="filtro-categoria"></select>
+            <button class="btn" onclick="filtrarCategoria()">Filtrar</button>
+            <button class="btn" onclick="limparFiltro()">Limpar</button>
+          </div>
+          <div id="lista-menu"></div>
+          <hr>
+          <small class="small-muted">Clique em um item para escolher adicionais, quantidade e observação.</small>
+        </aside>
+
+        <!-- PREVIEW PEDIDO -->
+        <main class="cartao">
+          <h2>🧾 Pedido Atual</h2>
+          <div id="preview-pedido-itens"></div>
+          <hr>
+          <div class="linha-total" style="display:flex;justify-content:space-between">
+            <span>Subtotal</span><strong id="total-subtotal">R$ 0,00</strong>
+          </div>
+          <div class="linha-total" style="display:flex;justify-content:space-between">
+            <span>Taxa</span><strong id="total-taxa">R$ 0,00</strong>
+          </div>
+          <div class="linha-total totalzao" style="display:flex;justify-content:space-between">
+            <span>TOTAL</span><strong id="total-geral">R$ 0,00</strong>
+          </div>
+
+          <div style="margin-top:12px;display:flex;gap:8px">
+            <button class="btn" onclick="mostrarSecao('menu')">💼 Gerenciar Menu</button>
+            <button class="btn btn-primario" id="btn-finalizar-pedido">✅ Finalizar Pedido</button>
+          </div>
+        </main>
+
+        <!-- AÇÕES -->
+        <aside class="cartao">
+          <h2>Ações</h2>
+          <div class="col">
+            <label>Taxa de Entrega (R$)</label>
+            <div class="flex" id="botoes-taxa">
+              <button class="btn btn-taxa" data-valor="5">5</button>
+              <button class="btn btn-taxa" data-valor="6">6</button>
+              <button class="btn btn-taxa" data-valor="8">8</button>
+              <button class="btn btn-taxa" data-valor="10">10</button>
+            </div>
+            <input id="taxa-personalizada" type="number" step="0.5" placeholder="Outra taxa..." />
+          </div>
+
+          <div class="col" style="margin-top:8px">
+            <label for="endereco-cliente">Endereço do Cliente</label>
+            <textarea id="endereco-cliente" placeholder="Rua, nº, complemento..."></textarea>
+          </div>
+<div class="col">
+  <label style="display:flex;align-items:center;gap:6px;">
+    <input type="checkbox" id="pedido-retirada" />
+    Pedido para retirada ou consumo local
+  </label>
+</div>
+          <div class="col">
+            <label>Forma de Pagamento</label>
+            <select id="forma-pagamento">
+              <option>PIX</option><option>Cartão</option><option>Dinheiro</option>
+            </select>
+          </div>
+
+          <div id="campo-troco" style="display:none" class="col">
+            <label>Valor Pago (Dinheiro)</label>
+            <input id="valor-pago" type="number" step="0.5" placeholder="Ex: 50.00" />
+          </div>
+
+          <div class="col" style="margin-top:10px">
+            <label>Logo (opcional)</label>
+            <input id="upload-logo" type="file" accept="image/*" />
+            <img id="preview-logo" src="" style="display:none;width:120px;margin-top:8px"/>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- SEÇÕES DE GERENCIAMENTO (mantive IDs originais para compatibilidade) -->
+    <section id="menu" style="display:none;padding:18px">
+      <div class="cartao" style="max-width:1200px;margin:0 auto">
+        <h2>Gerenciar Produtos</h2>
+        <form id="form-novo-item-menu">
+  <div class="grid-3">
+    <div>
+      <label>Nome do Produto</label>
+      <input id="menu-nome" required />
+    </div>
+    <div>
+      <label>Preço (R$)</label>
+      <input id="menu-preco" type="number" step="0.01" required />
+    </div>
+    <div>
+      <label>Categoria</label>
+      <select id="menu-categoria-select"></select>
+    </div>
+  </div>
+
+  <input type="hidden" id="menu-edit-id" />
+
+  <!-- BOTÕES -->
+  <div style="display:flex;gap:8px;margin-top:12px">
+    <button class="btn abrir" type="submit">💾 Salvar</button>
+    <button class="btn" type="button" onclick="limparFormMenu()">Cancelar</button>
+  </div>
+
+  <!-- ADICIONAIS ABAIXO -->
+  <div style="margin-top:16px">
+    <label>Adicionais válidos para este produto</label>
+    <div id="lista-adicionais-para-produto"
+         class="grade-adicionais"
+         style="padding:8px;border:1px solid var(--border);border-radius:6px;min-height:48px"></div>
+  </div>
+</form>
+
+        <hr>
+        <h3>Produtos Cadastrados</h3>
+        <ul id="lista-itens-menu-gerenciar" class="table-list"></ul>
+      </div>
+
+      <div class="rodape-admin">
+        <button class="btn" onclick="exportarCardapio()">📤 Exportar Cardápio</button>
+        <button class="btn" onclick="(function(){ const i=document.createElement('input');i.type='file';i.accept='.json';i.onchange=importarCardapio; i.click();})()">📥 Importar Cardápio</button>
+        <button class="btn encerrar" onclick="solicitarSenhaLimpeza()">🧹 Limpar Dados</button>
+      </div>
+    </section>
+
+    <section id="categorias" style="display:none;padding:18px">
+      <div class="cartao" style="max-width:1000px;margin:0 auto">
+        <h2>Gerenciar Categorias</h2>
+        <form id="form-nova-categoria" style="margin-bottom:12px">
+          <div class="grid-2"><div><label>Nome da Categoria</label><input id="categoria-nome" required/></div><div><label>Descrição (opcional)</label><input id="categoria-desc" /></div></div>
+          <input type="hidden" id="categoria-edit-id"/>
+          <div style="display:flex;gap:8px;margin-top:8px"><button class="btn abrir" type="submit">💾 Salvar</button><button class="btn" type="button" onclick="limparFormCategoria()">Cancelar</button></div>
+        </form>
+        <h3>Categorias</h3>
+        <ul id="lista-categorias" class="table-list"></ul>
+      </div>
+    </section>
+
+    <section id="adicionais" style="display:none;padding:18px">
+      <div class="cartao" style="max-width:1000px;margin:0 auto">
+        <h2>Gerenciar Adicionais</h2>
+    <form id="form-novo-adicional">
+
+    <div class="grid-3-adicional">
+
+        <div>
+            <label>Nome do Adicional</label>
+            <input id="adicional-nome" required />
+        </div>
+
+        <div>
+            <label>Preço (R$)</label>
+            <input id="adicional-preco"
+                   type="number"
+                   step="0.01"
+                   required />
+        </div>
+
+        <div>
+            <label>Categoria</label>
+            <select id="adicional-categoria-select"></select>
+        </div>
+
+    </div>
+
+    <input type="hidden" id="adicional-edit-id"/>
+
+    <div style="display:flex;gap:8px;margin-top:12px">
+        <button class="btn abrir" type="submit">💾 Salvar</button>
+        <button class="btn" type="button"
+                onclick="limparFormAdicional()">
+            Cancelar
+        </button>
+    </div>
+<div style="margin-bottom:15px">
+    <input
+        id="pesquisa-adicional"
+        type="text"
+        placeholder="🔍 Pesquisar adicional..."
+        oninput="filtrarAdicionais()"
+        style="
+            width:100%;
+            height:44px;
+            padding:0 14px;
+            border:1px solid #dbe3ec;
+            border-radius:12px;
+            font-size:14px;
+        "
+    />
+</div>
+</form>
+        <hr>
+        <h3>Adicionais Cadastrados</h3>
+        <ul id="lista-adicionais-gerenciador" class="table-list"></ul>
+      </div>
+    </section>
+
+    <section id="historico" style="display:none;padding:18px">
+      <div class="cartao" style="max-width:1200px;margin:0 auto">
+        <h2>Histórico de Pedidos</h2>
+        <ul id="lista-pedidos-salvos"></ul>
+      </div>
+    </section>
+
+    <!-- modal adicionais (com campo de observação) -->
+    <div id="modal-adicionais" class="modal">
+      <div class="modal-content">
+        <h3 id="modal-item-nome">Item</h3>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <div style="flex:1"><label>Quantidade</label><input id="modal-item-qtd" type="number" value="1" min="1" /></div>
+          <div style="width:170px"><label>Preço unitário</label><div id="modal-preco-unit" style="padding:8px;border:1px solid var(--border);border-radius:6px">R$ 0,00</div></div>
+        </div>
+
+        <h4 style="margin-top:12px">Adicionais disponíveis</h4>
+        <div id="modal-opcoes-adicionais" class="grade-adicionais" style="max-height:200px;overflow:auto;padding:8px;border:1px solid var(--border);border-radius:6px"></div>
+
+        <div style="margin-top:12px">
+          <label>Observação (ex: sem cebola, sem maionese)</label>
+          <textarea id="modal-observacao" placeholder="Observações para este item..." rows="2"></textarea>
+        </div>
+
+        <div style="display:flex;gap:8px;margin-top:12px;justify-content:flex-end">
+          <button class="btn" onclick="fecharModalAdicionais()">Cancelar</button>
+          <button class="btn abrir" id="btn-confirmar-adicionais">Adicionar ao Pedido</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- print area (resumo de fechamento) -->
+    <div id="print-area" style="display:none;padding:8px">
+      <div id="resumo-print-content"></div>
+    </div>
+
+    <footer style="margin-top:24px">© 2025 JRP Food ManagerV35.0</footer>
+  </div>
+<script>
+/* ============================
+   SCRIPT INTEGRADO (FINAL)
+   ============================ */
+const DIAS_TRIAL = 30;
+
+const CHAVE_ATIVACAO = "JRPFOOD2026";
+
+const STORAGE_DATA_INSTALACAO =
+    "pdv_data_instalacao";
+
+const STORAGE_ATIVADO =
+    "pdv_ativado";
+/* ---------- Estado inicial (mantém compatibilidade com seu arquivo estável) ---------- */
+let estado = {
+  categorias: [],
+  menu: [],
+  adicionais: [],
+  pedidosSalvos: [],
+  logoBase64: null,
+  pedidoAtual: { id:null, numero:null, data:null, endereco:'', itens:[], taxaEntrega:0, formaPagamento:'PIX', valorPago:0, troco:0, total:0 },
+  itemEmConfiguracao: null,
+  // controle de loja: 'closed' | 'open' | 'paused'
+  lojaEstado: localStorage.getItem('pdvLojaEstado') || 'closed'
+};
+
+/* ---------- DOM cache (elementos usados) ---------- */
+const dom = {
+  listaMenu: document.getElementById('lista-menu'),
+  filtroCategoriaSelect: document.getElementById('filtro-categoria'),
+  previewItens: document.getElementById('preview-pedido-itens'),
+  totalSubtotal: document.getElementById('total-subtotal'),
+  totalTaxa: document.getElementById('total-taxa'),
+  totalGeral: document.getElementById('total-geral'),
+  totalPagamento: document.getElementById('total-pagamento'),
+  linhaTroco: document.getElementById('linha-troco'),
+  totalTroco: document.getElementById('total-troco'),
+  botoesTaxa: document.getElementById('botoes-taxa'),
+  taxaPersonalizada: document.getElementById('taxa-personalizada'),
+  formaPagamento: document.getElementById('forma-pagamento'),
+  campoTroco: document.getElementById('campo-troco'),
+  valorPago: document.getElementById('valor-pago'),
+  uploadLogo: document.getElementById('upload-logo'),
+  previewLogo: document.getElementById('preview-logo'),
+  enderecoCliente: document.getElementById('endereco-cliente'),
+  btnFinalizar: document.getElementById('btn-finalizar-pedido'),
+  listaPedidosSalvos: document.getElementById('lista-pedidos-salvos'),
+  modal: document.getElementById('modal-adicionais'),
+  modalItemNome: document.getElementById('modal-item-nome'),
+  modalQtd: document.getElementById('modal-item-qtd'),
+  modalPrecoUnit: document.getElementById('modal-preco-unit'),
+  modalOpcoes: document.getElementById('modal-opcoes-adicionais'),
+  btnConfirmarAdicionais: document.getElementById('btn-confirmar-adicionais'),
+  printArea: document.getElementById('print-area'),
+  formNovoItemMenu: document.getElementById('form-novo-item-menu'),
+  menuNome: document.getElementById('menu-nome'),
+  menuPreco: document.getElementById('menu-preco'),
+  menuCategoriaSelect: document.getElementById('menu-categoria-select'),
+  listaAdicionaisParaProduto: document.getElementById('lista-adicionais-para-produto'),
+  listaItensMenuGerenciar: document.getElementById('lista-itens-menu-gerenciar'),
+  formNovaCategoria: document.getElementById('form-nova-categoria'),
+  categoriaNome: document.getElementById('categoria-nome'),
+  categoriaDesc: document.getElementById('categoria-desc'),
+  listaCategorias: document.getElementById('lista-categorias'),
+  formNovoAdicional: document.getElementById('form-novo-adicional'),
+  adicionalNome: document.getElementById('adicional-nome'),
+  adicionalPreco: document.getElementById('adicional-preco'),
+  adicionalCategoriaSelect: document.getElementById('adicional-categoria-select'),
+  listaAdicionaisGerenciador: document.getElementById('lista-adicionais-gerenciador'),
+  modalObservacao: document.getElementById('modal-observacao'),
+
+  // loja controls
+  btnAbrir: document.getElementById('btn-abrir-loja'),
+  btnRetomar: document.getElementById('btn-retomar-loja'),
+  btnRetomarTop: document.getElementById('btn-retomar-loja-top'),
+  btnPausar: document.getElementById('btn-pausar-loja'),
+  btnEncerrar: document.getElementById('btn-encerrar-loja'),
+  statusLoja: document.getElementById('status-loja'),
+  telaInicial: document.getElementById('tela-inicial')
+};
+
+/* ---------- Helpers ---------- */
+function gerarId(array){ return array.length>0 ? Math.max(...array.map(x=>Number(x.id)))+1 : 1; }
+function escapeHtml(s){ if(!s) return ''; return String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;'); }
+function getCategoriaById(id){ return estado.categorias.find(c=>Number(c.id)===Number(id)) || null; }
+function getProdutoById(id){ return estado.menu.find(m=>Number(m.id)===Number(id)) || null; }
+function getAdicionalById(id){ return estado.adicionais.find(a=>Number(a.id)===Number(id)) || null; }
+
+/* ---------- Storage load/save ---------- */
+function carregarStorage(){
+  try{
+    const cats = localStorage.getItem('pdvCategorias');
+    const menu = localStorage.getItem('pdvMenu');
+    const adds = localStorage.getItem('pdvAdicionais');
+    const pedidos = localStorage.getItem('pdvPedidos');
+    const logo = localStorage.getItem('pdvLogo');
+
+    estado.categorias = cats ? JSON.parse(cats) : [];
+    estado.menu = menu ? JSON.parse(menu) : [];
+    estado.adicionais = adds ? JSON.parse(adds) : [];
+    // Compatibilidade com adicionais antigos: todos começam ativos.
+    let adicionaisAtualizados = false;
+    estado.adicionais = estado.adicionais.map(ad => {
+      if(typeof ad.ativo === 'undefined'){
+        adicionaisAtualizados = true;
+        return {...ad, ativo:true};
+      }
+      return ad;
+    });
+    if(adicionaisAtualizados){
+      localStorage.setItem('pdvAdicionais', JSON.stringify(estado.adicionais));
+    }
+    estado.pedidosSalvos = pedidos ? JSON.parse(pedidos) : [];
+    estado.logoBase64 = logo || null;
+
+    if(estado.logoBase64 && dom.previewLogo){ dom.previewLogo.src = estado.logoBase64; dom.previewLogo.style.display = 'block'; document.getElementById('logo-preview').src = estado.logoBase64; document.getElementById('logo-preview').style.display='block'; }
+  }catch(e){
+    console.error('Erro ao carregar storage', e);
+  }
+}
+function salvarCategorias(){ localStorage.setItem('pdvCategorias', JSON.stringify(estado.categorias)); }
+function salvarMenu(){ localStorage.setItem('pdvMenu', JSON.stringify(estado.menu)); }
+function salvarAdicionais(){ localStorage.setItem('pdvAdicionais', JSON.stringify(estado.adicionais)); }
+function salvarPedidos(){ localStorage.setItem('pdvPedidos', JSON.stringify(estado.pedidosSalvos)); }
+function salvarLogo(){ if(estado.logoBase64) localStorage.setItem('pdvLogo', estado.logoBase64); }
+function salvarEstadoLoja(){ localStorage.setItem('pdvLojaEstado', estado.lojaEstado); }
+
+/* ---------- UI Helpers (selects/lists) ---------- */
+function atualizarSelectCategoria(selectEl, includeEmpty=false, includeAll=false){
+  if(!selectEl) return;
+  selectEl.innerHTML = '';
+  if(includeAll){ const optAll = document.createElement('option'); optAll.value=''; optAll.textContent='Todas as categorias'; selectEl.appendChild(optAll); }
+  if(includeEmpty){ const optEmpty = document.createElement('option'); optEmpty.value=''; optEmpty.textContent=''; selectEl.appendChild(optEmpty); }
+  estado.categorias.forEach(c=>{ const opt=document.createElement('option'); opt.value=String(c.id); opt.textContent=c.nome; selectEl.appendChild(opt); });
+}
+function preencherSelectsEListas(){
+  atualizarSelectCategoria(dom.menuCategoriaSelect, true, false);
+  atualizarSelectCategoria(dom.adicionalCategoriaSelect, true, false);
+  atualizarSelectCategoria(dom.filtroCategoriaSelect, false, true);
+}
+
+/* ---------- Render Menu / Preview / Gerenciadores ---------- */
+let filtroCategoriaAtual = null;
+function renderizarMenu(){
+  if(!dom.listaMenu) return;
+  dom.listaMenu.innerHTML = '';
+  const produtos = filtroCategoriaAtual ? estado.menu.filter(m=>m.categoriaId==filtroCategoriaAtual) : estado.menu;
+  produtos.forEach(item=>{
+    const cat = getCategoriaById(item.categoriaId);
+    const div = document.createElement('div');
+    div.className='produto-card';
+    const emoji = (item.emoji)||( '🍽️' );
+    div.innerHTML = `<div class="produto-left"><div class="produto-emoji">${emoji}</div><div class="produto-info"><div class="produto-nome">${escapeHtml(item.nome)}</div><div class="produto-cat small-muted">${cat?escapeHtml(cat.nome):''}</div></div></div><div class="produto-preco">R$ ${Number(item.preco).toFixed(2)}</div>`;
+    div.addEventListener('click', ()=> abrirModalAdicionais(item.id));
+    dom.listaMenu.appendChild(div);
+  });
+}
+function filtrarCategoria(){ filtroCategoriaAtual = dom.filtroCategoriaSelect.value ? Number(dom.filtroCategoriaSelect.value) : null; renderizarMenu(); }
+function limparFiltro(){ filtroCategoriaAtual = null; if(dom.filtroCategoriaSelect) dom.filtroCategoriaSelect.value=''; renderizarMenu(); }
+
+function renderizarPreviewPedido(){
+  if(!dom.previewItens) return;
+  dom.previewItens.innerHTML = '';
+  if(estado.pedidoAtual.itens.length === 0){ dom.previewItens.innerHTML = '<p class="small-muted" style="text-align:center">Adicione itens ao pedido...</p>'; }
+  let subtotal = 0;
+  estado.pedidoAtual.itens.forEach((it, idx)=>{
+    const adicionaisLabel = it.adicionais && it.adicionais.length > 0 ? it.adicionais.map(a => `<div style="margin-left:12px;font-size:11px;color:#555;">➕ ${escapeHtml(a.nome)} (+R$ ${a.preco.toFixed(2)})</div>`).join('') : '';
+    const adicionaisTotal = it.adicionais.reduce((s,a)=>s + (a.preco||0),0);
+    const itemTotal = (it.precoUnit + adicionaisTotal) * it.qtd;
+    subtotal += itemTotal;
+
+    const div = document.createElement('div');
+    div.className = 'item-preview';
+    const obsHtml = it.observacao ? `<div class="item-observacao">Obs: ${escapeHtml(it.observacao)}</div>` : '';
+    const adicionaisHtml = adicionaisLabel ? `<div class="item-adicionais">${adicionaisLabel}</div>` : '';
+    div.innerHTML = `<div class="left"><div><strong>${it.qtd}x ${escapeHtml(it.nome)}</strong></div>${adicionaisHtml}${obsHtml}</div><div style="text-align:right"><div>R$ ${itemTotal.toFixed(2)}</div><div style="margin-top:6px"><button class="btn" onclick="editarItemDoPedido(${idx})">📝</button><button class="btn encerrar" onclick="removerItemDoPedido(${idx})">X</button></div></div>`;
+    dom.previewItens.appendChild(div);
+  });
+
+  const taxa = parseFloat(estado.pedidoAtual.taxaEntrega || 0) || 0;
+  const total = subtotal + taxa;
+  estado.pedidoAtual.total = total;
+  if(dom.totalSubtotal) dom.totalSubtotal.innerText = `R$ ${subtotal.toFixed(2)}`;
+  if(dom.totalTaxa) dom.totalTaxa.innerText = `R$ ${taxa.toFixed(2)}`;
+  if(dom.totalGeral) dom.totalGeral.innerText = `R$ ${total.toFixed(2)}`;
+  if(dom.totalPagamento) dom.totalPagamento.innerText = estado.pedidoAtual.formaPagamento || '-';
+
+  let troco = 0;
+  if(estado.pedidoAtual.formaPagamento === 'Dinheiro' && estado.pedidoAtual.valorPago > 0){
+    troco = estado.pedidoAtual.valorPago - total;
+  }
+  estado.pedidoAtual.troco = troco;
+  if(dom.totalTroco && dom.linhaTroco){
+    if(troco !== 0){ dom.linhaTroco.style.display='flex'; dom.totalTroco.innerText = troco>=0 ? `R$ ${troco.toFixed(2)}` : `Faltam R$ ${Math.abs(troco).toFixed(2)}`; }
+    else { dom.linhaTroco.style.display='none'; }
+  }
+}
+
+/* ---------- preencher adicionais para produto (gerenciador) ---------- */
+function preencherListaAdicionaisParaProduto(){
+  if(!dom.listaAdicionaisParaProduto) return;
+  dom.listaAdicionaisParaProduto.innerHTML = '';
+  estado.adicionais.filter(ad => ad.ativo !== false).forEach(ad=>{
+    const label = document.createElement('label');
+    label.className='adicional-card';
+    label.innerHTML = `<input type="checkbox" value="${ad.id}"> <strong>${escapeHtml(ad.nome)}</strong><small>R$ ${Number(ad.preco).toFixed(2)}</small>`;
+    dom.listaAdicionaisParaProduto.appendChild(label);
+  });
+}
+
+/* ---------- render gerenciadores ---------- */
+function renderizarGerenciadorMenu(){
+  if(!dom.listaItensMenuGerenciar) return;
+  dom.listaItensMenuGerenciar.innerHTML='';
+  estado.menu.forEach(item=>{
+    const li=document.createElement('li'); const cat=getCategoriaById(item.categoriaId);
+    const adicionaisNames = item.adicionaisIds && item.adicionaisIds.length>0 ? item.adicionaisIds.map(id=> getAdicionalById(id)?.nome || '' ).join(', ') : 'Nenhum';
+    li.innerHTML = `<div><strong>${escapeHtml(item.nome)}</strong> — R$ ${Number(item.preco).toFixed(2)}<br><small class="small-muted">Categoria: ${cat?escapeHtml(cat.nome):'—'} • Adicionais: ${escapeHtml(adicionaisNames)}</small></div>
+      <div style="display:flex;flex-direction:column;gap:6px"><button class="btn" onclick="editarItemMenu(${item.id})">Editar</button><button class="btn" onclick="removerItemMenu(${item.id})">Remover</button></div>`;
+    dom.listaItensMenuGerenciar.appendChild(li);
+  });
+  preencherListaAdicionaisParaProduto();
+}
+function renderizarGerenciadorCategorias(){
+  if(!dom.listaCategorias) return;
+  dom.listaCategorias.innerHTML='';
+  estado.categorias.forEach(c=>{
+    const li=document.createElement('li');
+    li.innerHTML = `<div><strong>${escapeHtml(c.nome)}</strong><div class="small-muted">${escapeHtml(c.descricao||'')}</div></div><div style="display:flex;flex-direction:column;gap:6px"><button class="btn" onclick="editarCategoria(${c.id})">Editar</button><button class="btn" onclick="removerCategoria(${c.id})">Remover</button></div>`;
+    dom.listaCategorias.appendChild(li);
+  });
+  atualizarSelectCategoria(dom.menuCategoriaSelect,true,false);
+  atualizarSelectCategoria(dom.adicionalCategoriaSelect,true,false);
+  atualizarSelectCategoria(dom.filtroCategoriaSelect,false,true);
+}
+function renderizarGerenciadorAdicionais(){
+  if(!dom.listaAdicionaisGerenciador) return;
+  dom.listaAdicionaisGerenciador.innerHTML='';
+
+  estado.adicionais.forEach(ad=>{
+    const li=document.createElement('li');
+    const cat=getCategoriaById(ad.categoriaId);
+    const estaAtivo = ad.ativo !== false;
+
+    if(!estaAtivo) li.classList.add('adicional-inativo');
+
+    li.innerHTML = `
+      <div>
+        <strong>${escapeHtml(ad.nome)}</strong> — R$ ${Number(ad.preco).toFixed(2)}<br>
+        <small class="small-muted">Categoria: ${cat?escapeHtml(cat.nome):'—'}</small><br>
+        <span class="status-adicional ${estaAtivo?'ativo':'inativo'}">
+          ${estaAtivo?'● ATIVO':'● INATIVO'}
+        </span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <button class="btn" onclick="editarAdicional(${ad.id})">Editar</button>
+        <button class="btn btn-status-adicional ${estaAtivo?'desativar':'ativar'}"
+                onclick="alternarStatusAdicional(${ad.id})">
+          ${estaAtivo?'Desativar':'Ativar'}
+        </button>
+        <button class="btn encerrar" onclick="removerAdicional(${ad.id})">Remover</button>
+      </div>`;
+
+    dom.listaAdicionaisGerenciador.appendChild(li);
+  });
+
+  preencherListaAdicionaisParaProduto();
+}
+function filtrarAdicionais(){
+
+    const texto =
+        document
+        .getElementById('pesquisa-adicional')
+        .value
+        .toLowerCase()
+        .trim();
+
+    document
+        .querySelectorAll('#lista-adicionais-gerenciador li')
+        .forEach(li => {
+
+            const conteudo =
+                li.textContent.toLowerCase();
+
+            li.style.display =
+                conteudo.includes(texto)
+                ? ''
+                : 'none';
+        });
+}
+
+function alternarStatusAdicional(id){
+  const adicional = getAdicionalById(id);
+  if(!adicional) return alert('Adicional não encontrado.');
+
+  adicional.ativo = adicional.ativo === false;
+  salvarAdicionais();
+  renderizarGerenciadorAdicionais();
+  renderizarGerenciadorMenu();
+  renderizarMenu();
+
+  alert(adicional.ativo
+    ? `✅ ${adicional.nome} foi ativado e voltou a ficar disponível nos pedidos.`
+    : `⏸️ ${adicional.nome} foi desativado e não aparecerá em novos pedidos.`);
+}
+
+/* ---------- MODAL (abrir/fechar/confirmar) com observação ---------- */
+function abrirModalAdicionais(produtoId){
+  const produto = getProdutoById(produtoId);
+  if(!produto) return alert('Produto não encontrado.');
+  estado.itemEmConfiguracao = produto;
+  if(dom.modalItemNome) dom.modalItemNome.innerText = produto.nome;
+  if(dom.modalQtd) dom.modalQtd.value = 1;
+  if(dom.modalPrecoUnit) dom.modalPrecoUnit.innerText = `R$ ${Number(produto.preco).toFixed(2)}`;
+  if(dom.modalOpcoes) dom.modalOpcoes.innerHTML = '';
+
+  // determina lista de adicionais: por produto (adicionaisIds) ou por categoria
+  let listaIds = [];
+  if(Array.isArray(produto.adicionaisIds) && produto.adicionaisIds.length>0) listaIds = produto.adicionaisIds.map(x=>Number(x)).filter(id => getAdicionalById(id)?.ativo !== false);
+  else if(produto.categoriaId !== undefined && produto.categoriaId !== null) listaIds = estado.adicionais.filter(a=> a.ativo !== false && Number(a.categoriaId) === Number(produto.categoriaId)).map(a=>Number(a.id));
+
+  if(listaIds.length === 0){
+    dom.modalOpcoes.innerHTML = `<div class="small-muted" style="padding:8px">Nenhum adicional disponível para esta categoria.</div>`;
+  } else {
+    listaIds.forEach(id=>{
+      const ad = getAdicionalById(id);
+      if(!ad) return;
+      const categoria = getCategoriaById(ad.categoriaId);
+      const card = document.createElement('label');
+      card.className = 'adicional-card';
+      card.style.display='flex';
+      card.style.justifyContent='space-between';
+      card.style.alignItems='center';
+      card.innerHTML = `<div style="display:flex;flex-direction:column"><div><input type="checkbox" data-id="${ad.id}" value="${ad.id}" data-preco="${ad.preco.toFixed(2)}"> <strong>${escapeHtml(ad.nome)}</strong></div><small>${categoria?escapeHtml(categoria.nome):'Categoria: —'} • R$ ${Number(ad.preco).toFixed(2)}</small></div>`;
+      dom.modalOpcoes.appendChild(card);
+    });
+  }
+
+  if(dom.modalObservacao) dom.modalObservacao.value = '';
+  if(dom.modal) dom.modal.style.display = 'block';
+}
+function fecharModalAdicionais(){ if(dom.modal) dom.modal.style.display = 'none'; estado.itemEmConfiguracao = null; if(dom.modalObservacao) dom.modalObservacao.value = ''; }
+
+function confirmarAdicaoComAdicionais(){
+  const produto = estado.itemEmConfiguracao;
+  if(!produto) return fecharModalAdicionais();
+  const qtd = parseInt(dom.modalQtd.value) || 1;
+  const checks = Array.from(dom.modalOpcoes.querySelectorAll('input[type="checkbox"]:checked'));
+  const adicionaisSelecionados = checks.map(ch=>{
+    const id = parseInt(ch.dataset.id);
+    const ad = getAdicionalById(id);
+    return ad ? {id:ad.id,nome:ad.nome,preco:ad.preco} : null;
+  }).filter(Boolean);
+
+  const observacao = dom.modalObservacao ? dom.modalObservacao.value.trim() : '';
+
+  estado.pedidoAtual.itens.push({
+    id: produto.id,
+    nome: produto.nome,
+    qtd: qtd,
+    precoUnit: produto.preco,
+    adicionais: adicionaisSelecionados,
+    observacao: observacao
+  });
+
+  fecharModalAdicionais();
+  renderizarPreviewPedido();
+}
+
+/* ---------- editar / remover item do pedido (permanece compatível) ---------- */
+function editarItemDoPedido(index){
+  const it = estado.pedidoAtual.itens[index];
+  if(!it) return;
+  const novaQtd = parseInt(prompt(`Quantidade para ${it.nome}:`, it.qtd));
+  if(isNaN(novaQtd) || novaQtd < 0) return;
+  if(novaQtd === 0){
+    if(confirm('Remover item?')){ estado.pedidoAtual.itens.splice(index,1); renderizarPreviewPedido(); }
+    return;
+  }
+
+  // editar observação simples
+  const novaObs = prompt('Observação (vazia para remover):', it.observacao || '');
+  if(novaObs !== null) it.observacao = novaObs.trim();
+  it.qtd = novaQtd;
+  renderizarPreviewPedido();
+}
+function removerItemDoPedido(index){
+  if(!confirm('Remover item do pedido?')) return;
+  estado.pedidoAtual.itens.splice(index,1);
+  renderizarPreviewPedido();
+}
+
+/* ---------- Taxas / Pagamento handlers ---------- */
+function handleBotoesTaxa(e){
+  if(!e.target.dataset || !e.target.dataset.valor) return;
+  const valor = parseFloat(e.target.dataset.valor);
+  if(dom.taxaPersonalizada) dom.taxaPersonalizada.value = '';
+  estado.pedidoAtual.taxaEntrega = valor;
+  document.querySelectorAll('.btn-taxa').forEach(b=>b.classList.remove('ativo'));
+  e.target.classList.add('ativo');
+  renderizarPreviewPedido();
+}
+function handleTaxaPersonalizada(e){ const v = parseFloat(e.target.value); estado.pedidoAtual.taxaEntrega = isNaN(v)?0:v; renderizarPreviewPedido(); }
+function handleFormaPagamento(e){ estado.pedidoAtual.formaPagamento = e.target.value; if(e.target.value === 'Dinheiro') dom.campoTroco.style.display='block'; else { dom.campoTroco.style.display='none'; estado.pedidoAtual.valorPago=0; if(dom.valorPago) dom.valorPago.value=''; } renderizarPreviewPedido(); }
+function handleValorPago(e){ estado.pedidoAtual.valorPago = parseFloat(e.target.value) || 0; renderizarPreviewPedido(); }
+
+/* ---------- Upload logo handler ---------- */
+function handleUploadLogo(e){
+  const f = e.target.files[0];
+  if(!f) return;
+  const reader = new FileReader();
+  reader.onload = (ev)=>{
+    estado.logoBase64 = ev.target.result;
+    if(dom.previewLogo){ dom.previewLogo.src = estado.logoBase64; dom.previewLogo.style.display = 'block'; }
+    const logoTop = document.getElementById('logo-preview');
+    if(logoTop){ logoTop.src = estado.logoBase64; logoTop.style.display = 'block'; }
+    salvarLogo();
+  };
+  reader.readAsDataURL(f);
+}
+
+/* ---------- contador / salvar pedido (mantendo compatibilidade) ---------- */
+function getProximoNumeroPedido(){
+  let proximo = (parseInt(localStorage.getItem('pdvContadorPedidos')) || 0) + 1;
+  localStorage.setItem('pdvContadorPedidos', proximo);
+  return proximo;
+}
+
+function finalizarPedido(){
+  if(estado.pedidoAtual.itens.length === 0) return alert('Adicione itens antes de finalizar.');
+  estado.pedidoAtual.endereco = dom.enderecoCliente.value || '';
+  estado.pedidoAtual.formaPagamento = dom.formaPagamento.value;
+  estado.pedidoAtual.valorPago = parseFloat(dom.valorPago.value) || 0;
+  estado.pedidoAtual.taxaEntrega = parseFloat(dom.taxaPersonalizada.value) || estado.pedidoAtual.taxaEntrega || 0;
+  estado.pedidoAtual.total = estado.pedidoAtual.itens.reduce((s,it)=> s + ((it.precoUnit + (it.adicionais.reduce((a,b)=>a+b.preco,0))) * it.qtd),0) + (estado.pedidoAtual.taxaEntrega||0);
+  estado.pedidoAtual.troco = estado.pedidoAtual.formaPagamento === 'Dinheiro' ? estado.pedidoAtual.valorPago - estado.pedidoAtual.total : 0;
+
+  let pedidoParaSalvar;
+  if(estado.pedidoAtual.id){
+    pedidoParaSalvar = {...estado.pedidoAtual, data: new Date().toISOString()};
+    const idx = estado.pedidosSalvos.findIndex(p=>p.id===pedidoParaSalvar.id);
+    if(idx>-1) estado.pedidosSalvos[idx] = pedidoParaSalvar;
+    else estado.pedidosSalvos.push(pedidoParaSalvar);
+  } else {
+    const numero = getProximoNumeroPedido();
+    const id = new Date().getTime();
+    pedidoParaSalvar = {...estado.pedidoAtual, id:id, numero:numero, data: new Date().toISOString()};
+    estado.pedidosSalvos.push(pedidoParaSalvar);
+  }
+
+  salvarPedidos();
+  renderizarHistorico();
+  gerarImpressao(pedidoParaSalvar.id);
+  resetarPedidoAtual();
+  alert(`Pedido #${pedidoParaSalvar.numero} salvo e impresso.`);
+}
+
+/* ---------- resetar pedido atual ---------- */
+function resetarPedidoAtual(){
+  estado.pedidoAtual = {id:null,numero:null,data:null,endereco:'',itens:[],taxaEntrega:0,formaPagamento:'PIX',valorPago:0,troco:0,total:0};
+  if(dom.taxaPersonalizada) dom.taxaPersonalizada.value = '';
+  if(dom.valorPago) dom.valorPago.value = '';
+  if(dom.formaPagamento) dom.formaPagamento.value = 'PIX';
+  if(dom.enderecoCliente) dom.enderecoCliente.value = '';
+  if(dom.previewItens) dom.previewItens.innerHTML = '';
+  renderizarPreviewPedido();
+}
+
+/* ---------- Histórico / editar / duplicar / remover ---------- */
+function renderizarHistorico(){
+  if(!dom.listaPedidosSalvos) return;
+  dom.listaPedidosSalvos.innerHTML = '';
+  if(!estado.pedidosSalvos || estado.pedidosSalvos.length === 0){
+    dom.listaPedidosSalvos.innerHTML = '<p class="small-muted">Nenhum pedido salvo ainda.</p>'; return;
+  }
+  [...estado.pedidosSalvos].reverse().forEach(p=>{
+    const li = document.createElement('li');
+    li.style.display='flex'; li.style.justifyContent='space-between'; li.style.marginBottom='8px';
+    const data = new Date(p.data);
+    const dataFmt = data.toLocaleDateString('pt-BR');
+    const hora = data.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    li.innerHTML = `<div><strong>${formatarDataPedidoPDF(p.data,p.numero)}</strong> — <small>#${p.numero}</small><br><small class="small-muted">${dataFmt} ${hora}</small><br><small class="small-muted">${escapeHtml(p.endereco || '')}</small></div>
+      <div style="display:flex;flex-direction:column;gap:6px"><div style="display:flex;gap:6px"><button class="btn" onclick="duplicarPedido(${p.id})">Duplicar</button><button class="btn" onclick="carregarPedidoParaEdicao(${p.id})">Editar</button></div><div style="display:flex;gap:6px"><button class="btn" onclick="gerarImpressao(${p.id})">Imprimir</button><button class="btn encerrar" onclick="removerPedido(${p.id})">Remover</button></div></div>`;
+    dom.listaPedidosSalvos.appendChild(li);
+  });
+}
+function carregarPedidoParaEdicao(id){
+  const p = estado.pedidosSalvos.find(x=>x.id===id);
+  if(!p) return alert('Pedido não encontrado.');
+  estado.pedidoAtual = JSON.parse(JSON.stringify(p));
+  if(dom.enderecoCliente) dom.enderecoCliente.value = estado.pedidoAtual.endereco || '';
+  if(dom.taxaPersonalizada) dom.taxaPersonalizada.value = estado.pedidoAtual.taxaEntrega || '';
+  if(dom.formaPagamento) dom.formaPagamento.value = estado.pedidoAtual.formaPagamento || 'PIX';
+  if(estado.pedidoAtual.formaPagamento === 'Dinheiro'){ dom.campoTroco.style.display='block'; dom.valorPago.value = estado.pedidoAtual.valorPago || ''; } else dom.campoTroco.style.display='none';
+  renderizarPreviewPedido();
+  mostrarSecao('pedido');
+  alert(`Pedido #${p.numero} carregado para edição. Ao finalizar, ele será salvo sobre o original.`);
+}
+function duplicarPedido(id){
+  const p = estado.pedidosSalvos.find(x=>x.id===id);
+  if(!p) return alert('Pedido não encontrado.');
+  estado.pedidoAtual = JSON.parse(JSON.stringify(p));
+  estado.pedidoAtual.id = null; estado.pedidoAtual.numero = null; estado.pedidoAtual.data = null;
+  if(dom.enderecoCliente) dom.enderecoCliente.value = estado.pedidoAtual.endereco || '';
+  renderizarPreviewPedido(); mostrarSecao('pedido'); alert('Pedido duplicado. Finalize para salvar como novo pedido.');
+}
+function removerPedido(id){ if(!confirm('Remover pedido?')) return; estado.pedidosSalvos = estado.pedidosSalvos.filter(x=>x.id!==id); salvarPedidos(); renderizarHistorico(); recalcularContadorPedidos(); }
+
+/* ---------- Impressão / PDF (inclui observação e logo) ---------- */
+function formatarDataPedidoPDF(dataISO, numero){
+  const d = new Date(dataISO);
+  const dia = String(d.getDate()).padStart(2,'0');
+  const mes = String(d.getMonth()+1).padStart(2,'0');
+  const ano = String(d.getFullYear()).slice(-2);
+  return `${dia}${mes}-${ano} #${numero}`;
+}
+
+function gerarImpressao(pedidoId){
+  const p = estado.pedidosSalvos.find(x=>x.id===pedidoId);
+  if(!p) return alert('Pedido não encontrado para imprimir.');
+
+  let html = `<div style="width:300px;font-family:Arial,Helvetica,sans-serif;color:#000">`;
+  html += `<div style="display:flex;justify-content:space-between;align-items:center">`;
+  html += `<div><strong>Resumo do Pedido</strong><div style="font-size:12px;color:#666">${formatarDataPedidoPDF(p.data,p.numero)}</div></div>`;
+  if(estado.logoBase64) html += `<div><img src="${estado.logoBase64}" style="max-width:90px;max-height:50px;object-fit:contain" /></div>`;
+  html += `</div><hr style="border:none;border-top:1px dashed #aaa;margin:8px 0" />`;
+  html += `<div><strong>Pedido #${p.numero}</strong><div class="small-muted">${new Date(p.data).toLocaleString()}</div></div>`;
+  if(p.endereco) html += `<div style="margin-top:6px"><strong>Endereço:</strong><div style="font-size:16px">${escapeHtml(p.endereco)}</div></div>`;
+  html += `<table style="width:100%;margin-top:8px;border-collapse:collapse"><thead><tr><th style="text-align:left;font-size:13px">Qtd</th><th style="text-align:left;font-size:13px">Item</th><th style="text-align:right;font-size:13px">Total</th></tr></thead><tbody>`;
+  p.itens.forEach(it=>{
+    const adicionaisTotal = it.adicionais.reduce((s,a)=>s + (a.preco||0),0);
+    const totalItem = (it.precoUnit + adicionaisTotal) * it.qtd;
+    const adicionaisLabel = it.adicionais && it.adicionais.length > 0 ? `<div style="font-size:11px;color:#555">${it.adicionais.map(a => `<div style="margin-left:12px;margin-top:2px;">➕ ${escapeHtml(a.nome)} (+R$ ${a.preco.toFixed(2)})</div>`).join('')}</div>` : '';
+    const obsLabel = it.observacao ? `<div style="font-size:11px;color:#555">Obs: ${escapeHtml(it.observacao)}</div>` : '';
+    html += `<tr><td style="padding:6px 0">${it.qtd}x</td><td style="padding:6px 0">${escapeHtml(it.nome)}${adicionaisLabel}${obsLabel}</td><td style="text-align:right;padding:6px 0">R$ ${totalItem.toFixed(2)}</td></tr>`;
+  });
+  html += `</tbody></table>`;
+  const subtotal = p.itens.reduce((s,it)=>s + ((it.precoUnit + it.adicionais.reduce((a,b)=>a+b.preco,0))*it.qtd),0);
+  html += `<hr style="border:none;border-top:1px dashed #aaa;margin:8px 0" />`;
+  html += `<div style="display:flex;justify-content:space-between"><div>Subtotal</div><div>R$ ${subtotal.toFixed(2)}</div></div>`;
+  html += `<div style="display:flex;justify-content:space-between"><div>Taxa</div><div>R$ ${p.taxaEntrega.toFixed(2)}</div></div>`;
+  html += `<div style="display:flex;justify-content:space-between;font-weight:bold;margin-top:6px"><div>TOTAL</div><div>R$ ${p.total.toFixed(2)}</div></div>`;
+  html += `<div style="margin-top:8px"><div><strong>Pagamento:</strong> ${escapeHtml(p.formaPagamento)}</div>`;
+  if(p.formaPagamento === 'Dinheiro'){ html += `<div>Valor pago: R$ ${p.valorPago.toFixed(2)}</div><div>Troco: R$ ${p.troco.toFixed(2)}</div>`; }
+  html += `</div>`;
+  html += `<div style="margin-top:10px;font-size:11px;color:#666© 2025 JRP Food ManagerV35.0</div>`;
+  html += `</div>`;
+
+  dom.printArea.innerHTML = html;
+  dom.printArea.style.display = 'block';
+  setTimeout(()=>{ window.print(); dom.printArea.style.display = 'none'; },250);
+}
+
+/* ---------- CRUD categorias / adicionais / menu (mantidos) ---------- */
+function limparFormCategoria(){ if(dom.categoriaNome) dom.categoriaNome.value=''; if(dom.categoriaDesc) dom.categoriaDesc.value=''; document.getElementById('categoria-edit-id').value=''; }
+document.getElementById('form-nova-categoria').addEventListener('submit', e=>{
+  e.preventDefault();
+  const nome = dom.categoriaNome.value.trim();
+  if(!nome) return alert('Informe o nome da categoria.');
+  const desc = dom.categoriaDesc.value.trim();
+  const editId = document.getElementById('categoria-edit-id').value;
+  if(editId){
+    const cat = estado.categorias.find(c=>c.id==editId);
+    if(cat){ cat.nome=nome; cat.descricao=desc; }
+  } else {
+    estado.categorias.push({id:gerarId(estado.categorias),nome:nome,descricao:desc});
+  }
+  salvarCategorias(); limparFormCategoria(); renderizarGerenciadorCategorias();
+});
+
+function limparFormAdicional(){ if(dom.adicionalNome) dom.adicionalNome.value=''; if(dom.adicionalPreco) dom.adicionalPreco.value=''; if(dom.adicionalCategoriaSelect) dom.adicionalCategoriaSelect.value=''; document.getElementById('adicional-edit-id').value=''; }
+document.getElementById('form-novo-adicional').addEventListener('submit', e=>{
+  e.preventDefault();
+  const nome = dom.adicionalNome.value.trim();
+  const preco = parseFloat(dom.adicionalPreco.value)||0;
+  const categoriaId = dom.adicionalCategoriaSelect.value ? Number(dom.adicionalCategoriaSelect.value):null;
+  const editId = document.getElementById('adicional-edit-id').value;
+  if(editId){
+    const a = getAdicionalById(editId);
+    if(a){ a.nome=nome; a.preco=preco; a.categoriaId=categoriaId; }
+  } else {
+    estado.adicionais.push({id:gerarId(estado.adicionais),nome:nome,preco:preco,categoriaId:categoriaId,ativo:true});
+  }
+  salvarAdicionais(); limparFormAdicional(); renderizarGerenciadorAdicionais();
+});
+
+function limparFormMenu(){ if(dom.menuNome) dom.menuNome.value=''; if(dom.menuPreco) dom.menuPreco.value=''; if(dom.menuCategoriaSelect) dom.menuCategoriaSelect.value=''; document.getElementById('menu-edit-id').value=''; dom.listaAdicionaisParaProduto.querySelectorAll('input[type="checkbox"]').forEach(ch=>ch.checked=false); }
+document.getElementById('form-novo-item-menu').addEventListener('submit', e=>{
+  e.preventDefault();
+  const nome = dom.menuNome.value.trim();
+  const preco = parseFloat(dom.menuPreco.value)||0;
+  const categoriaId = dom.menuCategoriaSelect.value ? Number(dom.menuCategoriaSelect.value) : null;
+  const selecionados = Array.from(dom.listaAdicionaisParaProduto.querySelectorAll('input[type="checkbox"]:checked')).map(ch=>Number(ch.value));
+  const editId = document.getElementById('menu-edit-id').value;
+  if(editId){
+    const item = getProdutoById(editId);
+    if(item){ item.nome=nome; item.preco=preco; item.categoriaId=categoriaId; item.adicionaisIds=selecionados; }
+  } else {
+    estado.menu.push({id:gerarId(estado.menu),nome:nome,preco:preco,categoriaId:categoriaId,adicionaisIds:selecionados});
+  }
+  salvarMenu(); limparFormMenu(); renderizarGerenciadorMenu(); renderizarMenu();
+});
+
+/* editar / remover helpers para menu/adicionais/categorias */
+function editarCategoria(id){ const c=getCategoriaById(id); if(!c) return; dom.categoriaNome.value=c.nome; dom.categoriaDesc.value=c.descricao||''; document.getElementById('categoria-edit-id').value=c.id; }
+function removerCategoria(id){ if(!confirm('Remover categoria?')) return; estado.categorias = estado.categorias.filter(c=>c.id!==id); estado.menu.forEach(m=>{ if(m.categoriaId===id) m.categoriaId=null; }); estado.adicionais.forEach(a=>{ if(a.categoriaId===id) a.categoriaId=null; }); salvarCategorias(); salvarMenu(); salvarAdicionais(); renderizarGerenciadorCategorias(); renderizarGerenciadorMenu(); renderizarGerenciadorAdicionais(); }
+
+function editarAdicional(id){ const a=getAdicionalById(id); if(!a) return; dom.adicionalNome.value=a.nome; dom.adicionalPreco.value=a.preco; dom.adicionalCategoriaSelect.value=a.categoriaId || ''; document.getElementById('adicional-edit-id').value=a.id; }
+function removerAdicional(id){ if(!confirm('Remover adicional?')) return; estado.adicionais = estado.adicionais.filter(a=>a.id!==id); estado.menu.forEach(m=>{ m.adicionaisIds = Array.isArray(m.adicionaisIds)? m.adicionaisIds.filter(x=>x!==id) : []; }); salvarAdicionais(); salvarMenu(); renderizarGerenciadorAdicionais(); renderizarGerenciadorMenu(); }
+
+function editarItemMenu(id){ const item=getProdutoById(id); if(!item) return; dom.menuNome.value=item.nome; dom.menuPreco.value=item.preco; dom.menuCategoriaSelect.value=item.categoriaId || ''; document.getElementById('menu-edit-id').value=item.id; preencherListaAdicionaisParaProduto(); setTimeout(()=>{ dom.listaAdicionaisParaProduto.querySelectorAll('input[type="checkbox"]').forEach(ch=>{ if(item.adicionaisIds.includes(Number(ch.value))) ch.checked=true; }); },10); }
+function removerItemMenu(id){ if(!confirm('Remover produto?')) return; estado.menu = estado.menu.filter(m=>m.id!==id); salvarMenu(); renderizarGerenciadorMenu(); renderizarMenu(); }
+
+/* ---------- limpeza protegida (senha) ---------- */
+const SENHA_ADMIN = "admin123";
+function solicitarSenhaLimpeza(){
+  const senha = prompt("Digite a senha para limpar todos os dados:");
+  if(!senha) return;
+  if(senha !== SENHA_ADMIN){ alert("Senha incorreta."); return; }
+  if(!confirm("Tem certeza? Isso apagará CATEGORIAS, PRODUTOS, ADICIONAIS e HISTÓRICO.")) return;
+  localStorage.clear();
+  estado = { categorias:[],menu:[],adicionais:[],pedidosSalvos:[],logoBase64:null,pedidoAtual:{id:null,numero:null,data:null,endereco:'',itens:[],taxaEntrega:0,formaPagamento:'PIX',valorPago:0,troco:0,total:0},itemEmConfiguracao:null, lojaEstado:'closed' };
+  carregarStorage(); preencherSelectsEListas(); renderizarMenu(); renderizarGerenciadorMenu(); renderizarGerenciadorCategorias(); renderizarGerenciadorAdicionais(); renderizarHistorico(); renderizarPreviewPedido(); atualizarUIEstadoLoja();
+  alert("🧹 Dados apagados.");
+}
+
+/* ---------- export / import cardápio (mantidos) ---------- */
+function exportarCardapio(){
+  const backup = { categorias: estado.categorias, menu: estado.menu, adicionais: estado.adicionais };
+  const blob = new Blob([JSON.stringify(backup, null, 2)], {type: "application/json"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a"); a.href = url; a.download = "backup_cardapio.json"; a.click(); URL.revokeObjectURL(url); alert("Backup exportado.");
+}
+function importarCardapio(e){
+  const file = e && e.target && e.target.files && e.target.files[0];
+  if(!file) return alert('Arquivo não selecionado.');
+  const reader = new FileReader();
+  reader.onload = ev=>{
+    try{
+      const dados = JSON.parse(ev.target.result);
+      if(!dados.categorias || !dados.menu) return alert('Arquivo inválido.');
+      estado.categorias = dados.categorias;
+      estado.menu = dados.menu;
+      if(dados.adicionais){
+        estado.adicionais = dados.adicionais.map(ad => ({...ad, ativo: ad.ativo !== false}));
+      }
+      salvarCategorias(); salvarMenu(); salvarAdicionais();
+      preencherSelectsEListas(); renderizarMenu(); renderizarGerenciadorMenu(); renderizarGerenciadorCategorias(); renderizarGerenciadorAdicionais();
+      alert('Cardápio importado.');
+    }catch(err){ alert('Erro ao importar: ' + err.message); }
+  };
+  reader.readAsText(file);
+}
+
+/* ---------- painel rodapé (já implementado visualmente) - nada extra aqui ---------- */
+
+/* ---------- recalcular contador (compatível com pdvPedidos / pdvContadorPedidos) ---------- */
+function recalcularContadorPedidos(){
+  try{
+    const raw = localStorage.getItem('pdvPedidos') || '[]';
+    const pedidos = JSON.parse(raw);
+    if(!Array.isArray(pedidos) || pedidos.length === 0){ localStorage.setItem('pdvContadorPedidos','0'); return; }
+    const numeros = pedidos.map(p => (p && typeof p.numero !== 'undefined') ? Number(p.numero) : NaN).filter(n => !isNaN(n) && isFinite(n) && n>0);
+    const maior = numeros.length>0 ? Math.max(...numeros) : 0;
+    localStorage.setItem('pdvContadorPedidos', String(maior));
+  }catch(e){ console.error(e); }
+}
+
+/* ---------- CONTROLE DE LOJA: abrir / pausar / retomar / encerrar ---------- */
+function atualizarUIEstadoLoja(){
+  // estados: 'closed', 'open', 'paused'
+  const st = estado.lojaEstado;
+  if(st === 'open'){
+    if(dom.statusLoja) dom.statusLoja.textContent = '🟢 Loja aberta';
+    if(dom.btnAbrir) dom.btnAbrir.style.display='none';
+    if(dom.btnRetomar) dom.btnRetomar.style.display='none';
+    if(dom.btnRetomarTop) dom.btnRetomarTop.style.display='none';
+    if(dom.btnPausar) dom.btnPausar.style.display='inline-flex';
+    if(dom.btnEncerrar) dom.btnEncerrar.style.display='inline-flex';
+    mostrarSecao('pedido');
+  } else if(st === 'paused'){
+    if(dom.statusLoja) dom.statusLoja.textContent = '⏸️ Loja em pausa';
+    if(dom.btnAbrir) dom.btnAbrir.style.display='none';
+    if(dom.btnRetomar) dom.btnRetomar.style.display='inline-flex';
+    if(dom.btnRetomarTop) dom.btnRetomarTop.style.display='inline-flex';
+    if(dom.btnPausar) dom.btnPausar.style.display='none';
+    if(dom.btnEncerrar) dom.btnEncerrar.style.display='inline-flex';
+    mostrarSecao('tela-inicial');
+  } else {
+    // closed
+    if(dom.statusLoja) dom.statusLoja.textContent = '🔒 Loja fechada';
+    if(dom.btnAbrir) dom.btnAbrir.style.display='inline-flex';
+    if(dom.btnRetomar) dom.btnRetomar.style.display='inline-flex'; // mostra retomar quando há pedidos salvos
+    if(dom.btnRetomarTop) dom.btnRetomarTop.style.display='none';
+    if(dom.btnPausar) dom.btnPausar.style.display='none';
+    if(dom.btnEncerrar) dom.btnEncerrar.style.display='none';
+    mostrarSecao('tela-inicial');
+  }
+
+  // decide exibir retomar apenas se existirem pedidos salvos
+  if(dom.btnRetomar){
+    const tem = (estado.pedidosSalvos && estado.pedidosSalvos.length>0);
+    dom.btnRetomar.style.display = tem ? 'inline-flex' : 'none';
+    dom.btnRetomarTop.style.display = (estado.lojaEstado==='paused' && tem) ? 'inline-flex' : 'none';
+  }
+}
+
+function abrirLoja(){
+  // Abrir => inicia novo turno (zera contador e pedidos salvos)
+  if(!confirm('Abrir loja: isso iniciará um novo turno e zerará contador. Deseja continuar?')) return;
+  estado.lojaEstado = 'open';
+  estado.pedidosSalvos = [];
+  localStorage.setItem('pdvPedidos','[]');
+  localStorage.setItem('pdvContadorPedidos','0');
+  salvarEstadoLoja();
+  carregarStorage(); preencherSelectsEListas(); renderizarMenu(); renderizarGerenciadorMenu(); renderizarGerenciadorCategorias(); renderizarGerenciadorAdicionais(); renderizarHistorico(); renderizarPreviewPedido();
+  atualizarUIEstadoLoja();
+  alert('✅ Loja aberta e contador zerado.');
+}
+
+function pausarLoja(){
+  // Pausar => mantem pedidos e contador, marca estado paused
+  if(!confirm('Pausar loja: o sistema ficará em pausa e poderá ser retomado depois.')) return;
+  estado.lojaEstado = 'paused';
+  salvarEstadoLoja();
+  atualizarUIEstadoLoja();
+  alert('⏸️ Loja pausada. Você pode retomar depois sem perder pedidos.');
+}
+
+function retomarLoja(){
+  // Retomar => volta ao estado open mantendo dados
+  estado.lojaEstado = 'open';
+  salvarEstadoLoja();
+  atualizarUIEstadoLoja();
+  alert('▶️ Loja retomada. Continuando o turno.');
+}
+
+function encerrarDia(){
+  // Encerrar => gera resumo e pergunta se zera tudo
+  if(!confirm('Encerrar turno: será gerado o resumo e depois você pode zerar os pedidos. Deseja continuar?')) return;
+  const pedidos = estado.pedidosSalvos || [];
+  if(pedidos.length === 0){ alert('Nenhum pedido registrado neste turno.'); estado.lojaEstado='closed'; salvarEstadoLoja(); atualizarUIEstadoLoja(); return; }
+
+  // calcular totais
+  let total=0, pix=0, cartao=0, dinheiro=0;
+  pedidos.forEach(p=>{
+    total += p.total || 0;
+    if(p.formaPagamento==='PIX') pix+=p.total||0;
+    if(p.formaPagamento==='Cartão' || p.formaPagamento==='Cartao') cartao+=p.total||0;
+    if(p.formaPagamento==='Dinheiro') dinheiro+=p.total||0;
+  });
+
+  const resumoTexto = `Resumo do Turno - ${new Date().toLocaleString()}
+----------------------------------------
+Total de Pedidos: ${pedidos.length}
+Valor Total: R$ ${total.toFixed(2)}
+
+Por forma de pagamento:
+- PIX: R$ ${pix.toFixed(2)}
+- Cartão: R$ ${cartao.toFixed(2)}
+- Dinheiro: R$ ${dinheiro.toFixed(2)}
+----------------------------------------`;
+
+  // montar print com logo no topo
+  let html = `<div style="font-family:Arial,Helvetica,sans-serif;color:#000;width:320px">`;
+  if(estado.logoBase64) html += `<div style="text-align:center;margin-bottom:8px"><img src="${estado.logoBase64}" style="max-width:120px;max-height:80px;object-fit:contain"/></div>`;
+  html += `<h3 style="margin:0 0 6px 0">Resumo do Turno</h3><pre style="font-size:13px">${resumoTexto}</pre><div style="margin-top:8px;font-size:12px;color:#666© 2025 JRP Food ManagerV35.0</div></div>`;
+  document.getElementById('resumo-print-content').innerHTML = html;
+  const blob = new Blob([resumoTexto], { type:'text/plain' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `resumo_turno_${new Date().toLocaleDateString()}.txt`; a.click(); URL.revokeObjectURL(a.href);
+
+  // pergunta se zera tudo
+  if(confirm('Deseja zerar os pedidos e contador para o próximo turno?')) {
+    estado.pedidosSalvos = [];
+    localStorage.setItem('pdvPedidos','[]');
+    localStorage.setItem('pdvContadorPedidos','0');
+    alert('✅ Pedidos e contador zerados.');
+  } else {
+    alert('Resumo gerado. Histórico mantido.');
+  }
+
+  // volta para closed
+  estado.lojaEstado = 'closed';
+  salvarEstadoLoja();
+  atualizarUIEstadoLoja();
+
+  // imprime automaticamente
+  setTimeout(()=>{ window.print(); }, 300);
+}
+
+/* ---------- recálculo do contador após remoções ---------- */
+function patchRemoverPedido(){
+  // já definimos removerPedido acima; apenas garante recálculo após remoção
+  const original = removerPedido;
+  window.removerPedido = function(id){ const r = original(id); setTimeout(recalcularContadorPedidos, 200); return r; };
+}
+try{ if(typeof removerPedido==='function') patchRemoverPedido(); }catch(e){}
+function verificarLicenca() {
+
+    const ativado =
+        localStorage.getItem(STORAGE_ATIVADO);
+
+    if (ativado === "SIM") {
+        return;
+    }
+
+    let dataInstalacao =
+        localStorage.getItem(
+            STORAGE_DATA_INSTALACAO
+        );
+
+    if (!dataInstalacao) {
+
+        dataInstalacao =
+            new Date().toISOString();
+
+        localStorage.setItem(
+            STORAGE_DATA_INSTALACAO,
+            dataInstalacao
+        );
+    }
+
+    const inicio =
+        new Date(dataInstalacao);
+
+    const hoje =
+        new Date();
+
+    const diasUso =
+        Math.floor(
+            (hoje - inicio)
+            / (1000 * 60 * 60 * 24)
+        );
+
+    if (diasUso >= DIAS_TRIAL) {
+
+        solicitarAtivacao();
+    }
+}
+
+function solicitarAtivacao() {
+
+    const chave = prompt(
+        "Período de avaliação encerrado.\n\nDigite a chave de ativação:"
+    );
+
+    if (chave === CHAVE_ATIVACAO) {
+
+        localStorage.setItem(
+            STORAGE_ATIVADO,
+            "SIM"
+        );
+
+        alert(
+            "✅ Sistema ativado permanentemente."
+        );
+
+        location.reload();
+
+        return;
+    }
+
+    document.body.innerHTML = `
+        <div style="
+            height:100vh;
+            display:flex;
+            justify-content:center;
+            align-items:center;
+            flex-direction:column;
+            font-family:Arial;
+            background:#f8fafc;
+        ">
+
+            <h1 style="color:#dc2626">
+                SISTEMA BLOQUEADO
+            </h1>
+
+            <p>
+                Licença expirada.
+            </p>
+
+        </div>
+    `;
+}
+/* ---------- inicialização (carrega storage, preenche UI, eventos) ---------- */
+verificarLicenca();
+document.addEventListener('DOMContentLoaded', ()=>{
+  carregarStorage();
+  preencherSelectsEListas();
+  renderizarMenu();
+  renderizarGerenciadorMenu();
+  renderizarGerenciadorCategorias();
+  renderizarGerenciadorAdicionais();
+  renderizarHistorico();
+  renderizarPreviewPedido();
+
+  // eventos globais
+  if(dom.botoesTaxa) dom.botoesTaxa.addEventListener('click', handleBotoesTaxa);
+  if(dom.taxaPersonalizada) dom.taxaPersonalizada.addEventListener('input', handleTaxaPersonalizada);
+  if(dom.formaPagamento) dom.formaPagamento.addEventListener('change', handleFormaPagamento);
+  if(dom.valorPago) dom.valorPago.addEventListener('input', handleValorPago);
+  if(dom.uploadLogo) dom.uploadLogo.addEventListener('change', handleUploadLogo);
+  if(dom.btnFinalizar) dom.btnFinalizar.addEventListener('click', finalizarPedido);
+  if(dom.btnConfirmarAdicionais) dom.btnConfirmarAdicionais.addEventListener('click', confirmarAdicaoComAdicionais);
+// Checkbox simples de retirada
+const chkRetirada = document.getElementById('pedido-retirada');
+if (chkRetirada) {
+  chkRetirada.addEventListener('change', () => {
+    const campoEndereco = document.getElementById('endereco-cliente');
+    if (chkRetirada.checked) {
+      campoEndereco.value = '*** RETIRADA OU CONSUMO LOCAL ***';
+    } else {
+      campoEndereco.value = '';
+    }
+  });
+}
+  // preparar elementos de interação
+  atualizarUIEstadoLoja();
+});
+
+/* ---------- Expor funções para uso no HTML (compatibilidade) ---------- */
+window.mostrarSecao = function(id){
+  // esconder seções (todas as sections menos header)
+  document.querySelectorAll('section').forEach(s=> s.style.display='none');
+  const el = document.getElementById(id);
+  if(el) el.style.display = (id==='pedido' ? 'block' : 'block');
+  // marca aba ativa
+  document.querySelectorAll('.abas-navegacao .aba').forEach(b=> b.classList.remove('ativa'));
+  const aba = document.querySelector(`.abas-navegacao .aba[onclick*="${id}"]`);
+  if(aba) aba.classList.add('ativa');
+};
+window.abrirModalAdicionais = abrirModalAdicionais;
+window.fecharModalAdicionais = fecharModalAdicionais;
+window.confirmarAdicaoComAdicionais = confirmarAdicaoComAdicionais;
+window.editarItemDoPedido = editarItemDoPedido;
+window.removerItemDoPedido = removerItemDoPedido;
+window.filtrarCategoria = filtrarCategoria;
+window.limparFiltro = limparFiltro;
+window.limparFormCategoria = limparFormCategoria;
+window.editarCategoria = editarCategoria;
+window.removerCategoria = removerCategoria;
+window.limparFormAdicional = limparFormAdicional;
+window.editarAdicional = editarAdicional;
+window.removerAdicional = removerAdicional;
+window.alternarStatusAdicional = alternarStatusAdicional;
+window.limparFormMenu = limparFormMenu;
+window.editarItemMenu = editarItemMenu;
+window.removerItemMenu = removerItemMenu;
+window.limparTodosDados = solicitarSenhaLimpeza;
+window.exportarCardapio = exportarCardapio;
+window.importarCardapio = importarCardapio;
+window.abrirLoja = abrirLoja;
+window.pausarLoja = pausarLoja;
+window.retomarLoja = retomarLoja;
+window.encerrarDia = encerrarDia;
+
+/* ============================
+   FIM DO SCRIPT
+   ============================ */
+</script>
+</body>
+</html>
